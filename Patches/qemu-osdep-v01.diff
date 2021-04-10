@@ -12,3 +12,4 @@ index 66d01b9160..76be8c295b 100644
  #else
      return qemu_mprotect__osdep(addr, size, PROT_NONE);
  #endif
+
