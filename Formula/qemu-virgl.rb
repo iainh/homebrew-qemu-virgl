@@ -43,6 +43,12 @@ class QemuVirgl < Formula
     sha256 "aee09798d2d9a1839fe495d4da2a8054c5612070c82d3d59b3ec7cfa77bafda2"
   end
 
+  # workaround for mprotect failure on MacOS 11.2 on arm
+  patch :p1 do
+    url "https://raw.githubusercontent.com/iainh/homebrew-qemu-virgl/master/Patches/qemu-osdep-v01.diff"
+    sha256 "29461845d57ac49f9aafc83f760248b9c0665db24c8718137e7b785ebc8caed0"
+  end
+
   patch :p1 do
     url "https://raw.githubusercontent.com/knazarov/homebrew-qemu-virgl/fa3b5dcc2f0526f0d5156f576ef831937d92f5cb/Patches/qemu-edid-v01.diff"
     sha256 "490b8ccb1f8984010a1d82c6b8fc876fe3af465e9c4e3119bbb98977e29312ca"
