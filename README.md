@@ -31,16 +31,18 @@ release the mouse, press `Ctrl-Alt-g`.
 
 ### Usage - M1 Macs
 
+**Latest release needs virtio-gpu-gl-pci command line option instead of virtio-gpu-pci, otherwise gpu acceleration won't work**
+
 First, create a disk image you'll run your Linux installation from (tune image size as needed):
 
 ```sh
 qemu-img create hdd.raw 64G
 ```
 
-Download an ARM based Ubuntu image:
+Download an ARM based Fedora 34 image:
 
 ```sh
-curl -O https://cdimage.ubuntu.com/focal/daily-live/current/focal-desktop-arm64.iso
+curl -LO https://www.mirrorservice.org/sites/dl.fedoraproject.org/pub/fedora/linux/releases/34/Workstation/aarch64/iso/Fedora-Workstation-Live-aarch64-34-1.2.iso
 ```
 
 Copy the firmware:
@@ -57,8 +59,9 @@ qemu-system-aarch64 \
          -machine virt,accel=hvf,highmem=off \
          -cpu cortex-a72 -smp 2 -m 4G \
          -device intel-hda -device hda-output \
-         -device virtio-gpu-pci \
-         -device virtio-keyboard-pci \
+         -device qemu-xhci \
+         -device virtio-gpu-gl-pci \
+         -device usb-kbd \
          -device virtio-net-pci,netdev=net \
          -device virtio-mouse-pci \
          -display cocoa,gl=es \
@@ -66,7 +69,7 @@ qemu-system-aarch64 \
          -drive "if=pflash,format=raw,file=./edk2-aarch64-code.fd,readonly=on" \
          -drive "if=pflash,format=raw,file=./edk2-arm-vars.fd,discard=on" \
          -drive "if=virtio,format=raw,file=./hdd.raw,discard=on" \
-         -cdrom focal-desktop-arm64.iso \
+         -cdrom Fedora-Workstation-Live-aarch64-34-1.2.iso \
          -boot d
 ```
 
@@ -77,8 +80,9 @@ qemu-system-aarch64 \
          -machine virt,accel=hvf,highmem=off \
          -cpu cortex-a72 -smp 2 -m 4G \
          -device intel-hda -device hda-output \
-         -device virtio-gpu-pci \
-         -device virtio-keyboard-pci \
+         -device qemu-xhci \
+         -device virtio-gpu-gl-pci \
+         -device usb-kbd \
          -device virtio-net-pci,netdev=net \
          -device virtio-mouse-pci \
          -display cocoa,gl=es \
@@ -97,10 +101,10 @@ First, create a disk image you'll run your Linux installation from (tune image s
 qemu-img create hdd.raw 64G
 ```
 
-Download an x86 based Ubuntu image:
+Download an x86 based Fedora 34 image:
 
 ```sh
-curl -O https://cdimage.ubuntu.com/focal/daily-live/current/focal-desktop-amd64.iso
+curl -LO https://www.mirrorservice.org/sites/dl.fedoraproject.org/pub/fedora/linux/releases/34/Workstation/x86_64/iso/Fedora-Workstation-Live-x86_64-34-1.2.iso
 ```
 
 Install the system from the CD image:
@@ -110,14 +114,15 @@ qemu-system-x86_64 \
          -machine accel=hvf \
          -cpu Haswell-v4 -smp 2 -m 4G \
          -device intel-hda -device hda-output \
-         -device virtio-vga \
-         -device virtio-keyboard-pci \
+         -device qemu-xhci \
+         -device virtio-vga-gl \
+         -device usb-kbd \
          -device virtio-net-pci,netdev=net \
          -device virtio-mouse-pci \
          -display cocoa,gl=es \
          -netdev user,id=net,ipv6=off \
          -drive "if=virtio,format=raw,file=hdd.raw,discard=on" \
-         -cdrom focal-desktop-amd64.iso \
+         -cdrom Fedora-Workstation-Live-x86_64-34-1.2.iso \
          -boot d
 ```
 
@@ -128,11 +133,79 @@ qemu-system-x86_64 \
          -machine accel=hvf \
          -cpu Haswell-v4 -smp 2 -m 4G \
          -device intel-hda -device hda-output \
-         -device virtio-vga \
-         -device virtio-keyboard-pci \
+         -device qemu-xhci \
+         -device virtio-vga-gl \
+         -device usb-kbd \
          -device virtio-net-pci,netdev=net \
          -device virtio-mouse-pci \
          -display cocoa,gl=es \
          -netdev user,id=net,ipv6=off \
          -drive "if=virtio,format=raw,file=hdd.raw,discard=on"
 ```
+
+
+## Usage - Advanced
+
+This section has additional configuration you may want to do to improve your workflow
+
+
+### Clipboard sharing
+
+There's now support for sharing clipboard in both directions: from vm->host and host->vm. To enable clibpoard sharing, add this to your command line:
+
+```
+         -chardev qemu-vdagent,id=spice,name=vdagent,clipboard=on \
+         -device virtio-serial-pci \
+         -device virtserialport,chardev=spice,name=com.redhat.spice.0
+```
+
+### Mouse integration
+
+By default, you have mouse pointer capture and have to release mouse pointer from the VM using keyboard shortcut. In order to have seamless mouse configuration,
+add the following to your command line instead of `-device virtio-mouse-pci`:
+
+```
+	-device usb-tablet \
+```
+
+### MacOS native networking for VMs (vmnet)
+
+akihikodaki's patch set includes support for vmnet which offers more flexibility than `-netdev user`, and allows higher network throughput. (see https://github.com/akihikodaki/qemu/commit/72a35bb6e0a16bb7d346ba822a6d47293915fc95).
+
+For instance, to enable bridge mode, replace:
+
+```
+    -device virtio-net-pci,netdev=net \
+    -netdev user,id=net,ipv6=off \
+```
+
+with
+
+
+```
+    -netdev vmnet-macos,id=n1,mode=bridged,ifname=en0 \
+    -device virtio-net,netdev=n1 \
+```
+
+vmnet also offers "host" and "shared" networking model:
+
+```
+   -netdev vmnet-macos,id=str,mode=host|shared[,dhcp_start_address=addr,dhcp_end_address=addr,dhcp_subnet_mask=mask]
+```
+
+***caveats:***
+
+1) vmnet requires running qemu as root, for now.
+2) current vmnet API (Apple) doesn't support setting MAC address, so it will be randomized every time the VM is started.
+
+To work around 2), for now it's possible to set the MAC address within the VM.
+
+As root, create a file `/etc/udev/rules.d/75-mac-vmnet.rules` with the following content:
+
+```
+ACTION=="add", SUBSYSTEM=="net", KERNEL=="enp0s3", RUN+="/usr/bin/ip link set dev %k address 00:11:22:33:44:55"
+```
+
+replace `enp0s3` with the name of your interface and `00:11:22:33:44:55` with the desired MAC address.
+
+Reboot or issue a `ip link set dev enp0s3 address 00:11:22:33:44:55` to change your MAC address.

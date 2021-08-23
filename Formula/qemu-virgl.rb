@@ -1,13 +1,13 @@
 class QemuVirgl < Formula
   desc "Emulator for x86 and PowerPC"
   homepage "https://www.qemu.org/"
-  url "https://github.com/qemu/qemu.git", using: :git, revision: "571d413b5da6bc6f1c2aaca8484717642255ddb0"
-  version "20210403.1"
+  url "https://github.com/qemu/qemu.git", using: :git, revision: "2fa4ad3f9000c385f71237984fdd1eefe2a91900"
+  version "20210725.1"
   license "GPL-2.0-only"
 
   bottle do
-    root_url "https://github.com/knazarov/homebrew-qemu-virgl/releases/download/qemu-virgl-20210403.1"
-    sha256 catalina: "5e643d16f6bc4e83128ed889b99fb670e542f17820f6e069a116b5bbe1745ccb"
+    root_url "https://github.com/knazarov/homebrew-qemu-virgl/releases/download/qemu-virgl-20210725.1"
+    sha256 catalina: "1595106e66d077939eaab4a36aadf6ff6371caa29a854a0e0c655506d92ecddc"
   end
 
   depends_on "libtool" => :build
@@ -29,18 +29,19 @@ class QemuVirgl < Formula
   depends_on "nettle"
   depends_on "pixman"
   depends_on "snappy"
+  depends_on "spice-protocol"
   depends_on "vde"
 
   # 820KB floppy disk image file of FreeDOS 1.2, used to test QEMU
   resource "test-image" do
-    url "https://dl.bintray.com/homebrew/mirror/FD12FLOPPY.zip"
+    url "https://www.ibiblio.org/pub/micro/pc-stuff/freedos/files/distributions/1.2/FD12FLOPPY.zip"
     sha256 "81237c7b42dc0ffc8b32a2f5734e3480a3f9a470c50c14a9c4576a2561a35807"
   end
 
   # waiting for upstreaming of https://github.com/akihikodaki/qemu/tree/macos
   patch :p1 do
-    url "https://raw.githubusercontent.com/knazarov/homebrew-qemu-virgl/8432ac66323b67de8c558a0d1e66bdcf133b364b/Patches/qemu-v02.diff"
-    sha256 "aee09798d2d9a1839fe495d4da2a8054c5612070c82d3d59b3ec7cfa77bafda2"
+    url "https://raw.githubusercontent.com/knazarov/homebrew-qemu-virgl/8f364ec918c177cb5e72602f263fe0061066eea0/Patches/qemu-v04.diff"
+    sha256 "5301b861cf17486043d212a4385280e0aa6dada9453bbe66c2db47c6299155e7"
   end
 
   # workaround for mprotect failure on MacOS 11.2 on arm
@@ -50,8 +51,8 @@ class QemuVirgl < Formula
   end
 
   patch :p1 do
-    url "https://raw.githubusercontent.com/knazarov/homebrew-qemu-virgl/fa3b5dcc2f0526f0d5156f576ef831937d92f5cb/Patches/qemu-edid-v01.diff"
-    sha256 "490b8ccb1f8984010a1d82c6b8fc876fe3af465e9c4e3119bbb98977e29312ca"
+    url "https://raw.githubusercontent.com/knazarov/homebrew-qemu-virgl/18e6df670467c9d2cd2ec18375f4539cd6105028/Patches/qemu-libusb-v01.diff"
+    sha256 "2da15abeb2a8f859e7f2fae359ff5ded72ffa49c8db6bf4d90115fd1f5e01f22"
   end
 
   def install
@@ -70,9 +71,11 @@ class QemuVirgl < Formula
       --extra-cflags=-I#{Formula["libangle"].opt_prefix}/include
       --extra-cflags=-I#{Formula["libepoxy-angle"].opt_prefix}/include
       --extra-cflags=-I#{Formula["virglrenderer"].opt_prefix}/include
+      --extra-cflags=-I#{Formula["spice-protocol"].opt_prefix}/include/spice-1
       --extra-ldflags=-L#{Formula["libangle"].opt_prefix}/lib
       --extra-ldflags=-L#{Formula["libepoxy-angle"].opt_prefix}/lib
       --extra-ldflags=-L#{Formula["virglrenderer"].opt_prefix}/lib
+      --extra-ldflags=-L#{Formula["spice-protocol"].opt_prefix}/lib
       --disable-sdl
       --disable-gtk
     ]
@@ -106,7 +109,6 @@ class QemuVirgl < Formula
     assert_match expected, shell_output("#{bin}/qemu-system-mips64 --version")
     assert_match expected, shell_output("#{bin}/qemu-system-mips64el --version")
     assert_match expected, shell_output("#{bin}/qemu-system-mipsel --version")
-    assert_match expected, shell_output("#{bin}/qemu-system-moxie --version")
     assert_match expected, shell_output("#{bin}/qemu-system-nios2 --version")
     assert_match expected, shell_output("#{bin}/qemu-system-or1k --version")
     assert_match expected, shell_output("#{bin}/qemu-system-ppc --version")

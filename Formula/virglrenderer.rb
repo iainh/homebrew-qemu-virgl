@@ -1,13 +1,13 @@
 class Virglrenderer < Formula
   desc "VirGL virtual OpenGL renderer"
   homepage "https://gitlab.freedesktop.org/virgl/virglrenderer"
-  url "https://github.com/freedesktop/virglrenderer.git", using: :git, revision: "d470a2df588d86fca460db889bfe5b2cce7caebb"
-  version "20210404.1"
+  url "https://gitlab.freedesktop.org/virgl/virglrenderer.git", revision: "5e2d10463d6b79080c3376138221b73ea6e95186"
+  version "20210428.1"
   license "MIT"
 
   bottle do
-    root_url "https://github.com/knazarov/homebrew-qemu-virgl/releases/download/virglrenderer-20210404.1"
-    sha256 cellar: :any, catalina: "fdbbae2e42aed3e05515c7fd68df45b05a04aae4a08ceca1218998353c8727e7"
+    root_url "https://github.com/knazarov/homebrew-qemu-virgl/releases/download/virglrenderer-20210428.1"
+    sha256 cellar: :any, catalina: "5d096a7c2df87f390b3151a178cf750948a186260dc57eeb09feb9ea507f6035"
   end
 
   depends_on "meson" => :build
@@ -18,8 +18,8 @@ class Virglrenderer < Formula
 
   # waiting for upstreaming of https://github.com/akihikodaki/virglrenderer/tree/macos
   patch :p1 do
-    url "https://raw.githubusercontent.com/knazarov/homebrew-qemu-virgl/a6ce7624ccd762107ad6077972eb6393eaeda78f/Patches/virglrenderer-v02.diff"
-    sha256 "cd6b9c35a27182b1e38078881ec63a0db86be99e151ee5012e7e1c7edad39319"
+    url "https://raw.githubusercontent.com/knazarov/homebrew-qemu-virgl/381fdeb4ffe53196fe308852b3573a7ab2d2a2b9/Patches/virglrenderer-v03.diff"
+    sha256 "45a0c32ed419a3440093efdd26d55810bfd6a4616bdeed9fc62db2fdd0c0a7f6"
   end
 
   def install
